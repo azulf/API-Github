@@ -2,6 +2,7 @@ import sys
 import json
 import argparse
 import requests
+import headersapi
 # Creating List for Dictionary from file json
 
 aart = r""" ______                       _______                _     _               
@@ -50,9 +51,10 @@ def createfileJson(username, commands):
 
                
 # Write File into Json
-def writeFileJson(deData):
+def writeFileJson(deData,filename):
+    filename = (f'{filename}')
     # createList(deData, datalama)
-    with open('data.json', 'w') as json_file:
+    with open(filename, 'w') as json_file:
         json.dump(deData,json_file, indent=4 )
 
     
@@ -68,9 +70,10 @@ def insertData(datalama, username, command):
         print("data kosong")
 
 
-def fetch(username):
-    headers = {'Authorization' : 'token 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'}
-    url = f"https://api.github.com/users/{username}/events"
+def fetch(username, commands):
+    table_list = []
+    headers = headersapi.headers
+    url = f"https://api.github.com/users/{username}/{commands}"
     try :
         responses = requests.get(url, headers = headers)
         print(f"Status Code: {responses.status_code}")
@@ -83,8 +86,11 @@ def fetch(username):
             event_type = event.get("type", "Unknown")
             repo_name = event["repo"]["name"] if "repo" in event else "Unknown repo"
             print(f"- {event_type} on {repo_name}")
+            table_list.append(f"{event_type} on {repo_name}")
+            print(table_list)
 
-        
+        return table_list
+
         
     except requests.exceptions.HTTPError as http_err :
         print(f"HTTP error : {http_err}")
@@ -92,8 +98,10 @@ def fetch(username):
     except Exception as err:
         print(f"an Error occured : {err}")
     
+    
 def optionCommand() :
-    print("")
+    print("python cliapp.py <username> <repos>")
+    print("python cliapp.py <username> <events>")
 
         
 def main():
@@ -108,12 +116,15 @@ def main():
     # Checking and Load saved file data
     username = sys.argv[1]
     commands = sys.argv[2]
-    # datalama = createfileJson(username, commands)                 # Dinyalakan kembali setelah update 2.0.0 API Git
-    # # Output sys.argv
-    # updatedData = insertData(datalama, sys.argv[1], sys.argv[2])  # Dinyalakan kembali setelah update 2.0.0 API Git
-    # writeFileJson(updatedData)                                    # Dinyalakan kembali setelah update 2.0.0 API Git
-    fetch(username)
-
+    if commands == "Help":
+        optionCommand()
+    datalama = createfileJson(username, commands)                 # Dinyalakan kembali setelah update 2.0.0 API Git
+    # Output sys.argv
+    updatedData = insertData(datalama, sys.argv[1], sys.argv[2])  # Dinyalakan kembali setelah update 2.0.0 API Git
+    writeFileJson(updatedData, 'data.json')                                    # Dinyalakan kembali setelah update 2.0.0 API Git
+    fetch_data = fetch(username, commands)
+    print(fetch_data)
+    writeFileJson(fetch_data,'fetchgit.json')
 
 if __name__ == "__main__" :
     main()
